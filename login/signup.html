@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EdenX - Cadastro</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <canvas id="bgCanvas"></canvas>
+
+    <div class="login-container">
+        <header class="logo-container">
+            <h1>Éden<span>X</span></h1>
+            <div class="logo-glow"></div>
+        </header>
+
+        <form id="signupForm">
+            <p class="welcome-text">Crie sua conta no ÉdenX</p>
+
+            <div class="input-group">
+                <i data-lucide="user"></i>
+                <input type="text" id="name" placeholder="Nome Completo" required>
+            </div>
+
+            <div class="input-group">
+                <i data-lucide="mail"></i>
+                <input type="email" id="email" placeholder="E-mail" required>
+            </div>
+
+            <div class="input-group">
+                <i data-lucide="lock"></i>
+                <input type="password" id="password" placeholder="Senha" required>
+            </div>
+
+            <div class="input-group">
+                <i data-lucide="shield-check"></i>
+                <input type="password" id="confirmPassword" placeholder="Confirmar Senha" required>
+            </div>
+
+            <button type="submit" class="btn-login">CADASTRAR</button>
+
+            <div class="form-footer">
+                <p>Já possui uma conta? <a href="index.html" class="link highlight">Fazer Login</a></p>
+            </div>
+
+            <a href="../login/loadingvoltar.html" class="btn-back" title="Voltar">
+                <i data-lucide="chevron-left"></i>
+            </a>
+        </form>
+    </div>
+
+    <script src="./script.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>

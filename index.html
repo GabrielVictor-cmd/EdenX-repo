@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ÉdenX</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+
+<body>
+    <header class="top-logo">
+        <img src="./images/EdenX.png" alt="Logo">
+    </header>
+
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="nav-item active" data-target="view-feed"><i class="fa-solid fa-house"></i><span>Início</span>
+            </div>
+            <div class="nav-item" data-target="view-search"><i
+                    class="fa-solid fa-magnifying-glass"></i><span>Busca</span></div>
+            <div class="nav-item" data-target="view-reels"><i class="fa-solid fa-clapperboard"></i><span>Reels</span>
+            </div>
+            <div class="nav-item" data-target="view-messages"><i
+                    class="fa-regular fa-paper-plane"></i><span>Direct</span></div>
+            <div class="nav-item" data-target="view-profile"><i class="fa-solid fa-user"></i><span>Perfil</span></div>
+        </nav>
+
+        <main class="content-area">
+            <section id="view-feed" class="view active">
+
+                <div class="feed-content">
+                    <!-- Stories -->
+                    <div class="stories-row" id="stories-wrapper"></div>
+
+                    <!-- Criar nova postagem -->
+                    <div class="create-post-card">
+                        <div class="create-post-header">
+                            <img id="feed-user-avatar" class="create-avatar" src="https://i.pravatar.cc/150?u=mockuser" alt="Seu avatar">
+                            <input id="create-post-input" type="text" placeholder="Diga alguma coisa..." />
+                        </div>
+
+                        <div class="create-post-meta">
+                            <div class="create-post-options">
+                                <button id="select-image-btn" class="icon-btn" aria-label="Buscar na galeria"><i class="fa-regular fa-image"></i></button>
+                                <button id="toggle-location-btn" class="icon-btn" aria-label="Adicionar localização"><i class="fa-solid fa-location-dot"></i></button>
+                            </div>
+                            <div class="create-post-right">
+                                <span id="selected-image-name" class="selected-image-name">Nenhuma imagem selecionada</span>
+                                <button class="btn-share" id="share-post-btn">Compartilhar</button>
+                            </div>
+                        </div>
+
+                        <input type="file" id="create-post-image-input" accept="image/*" style="display:none;" />
+                        <div class="create-location-row" id="create-location-row" style="display:none;">
+                            <input id="create-post-location" type="text" placeholder="Adicionar local..." />
+                        </div>
+                    </div>
+
+                    <!-- Feed de posts -->
+                    <div id="posts-feed" class="posts-feed"></div>
+                </div>
+            </section>
+
+            <!-- Modal de comentários (reutilizável para qualquer post) -->
+            <div id="comments-modal" class="comments-modal-overlay" style="display: none;">
+                <div class="comments-modal">
+                    <div class="modal-header">
+                        <div class="modal-handle"></div>
+                        <h2>Comentários</h2>
+                        <i class="fa-solid fa-xmark close-icon" onclick="closeCommentsModal()"></i>
+                    </div>
+                    <div class="modal-comments-list" id="modal-comments-list"></div>
+                    <div class="modal-input-area">
+                        <img src="https://i.pravatar.cc/150?u=mockuser" alt="Seu Perfil" class="input-avatar" id="comment-modal-avatar">
+                        <div class="input-wrapper">
+                            <input type="text" id="modal-comment-input" placeholder="Adicionar um comentário..." />
+                            <div class="input-actions">
+                                <i class="fa-regular fa-face-smile emoji-icon" style="cursor: pointer;" title="Adicionar Emoji"></i>
+                            </div>
+                        </div>
+                        <button class="post-comment-btn" id="modal-post-comment-btn">Publicar</button>
+                    </div>
+                </div>
+            </div>
+
+            <section id="view-search" class="view">
+                <div class="search-header cyan-panel">
+                    <div class="search-bar dark-box">
+
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" placeholder="Buscar no Éden..." id="main-search">
+                    </div>
+                </div>
+                <div class="search-grid scrollable-area" id="search-results">
+                </div>
+            </section>
+            <!-- Modal de nova story -->
+            <div id="story-post-modal" class="comments-modal-overlay" style="display: none;">
+                <div class="comments-modal">
+                    <div class="modal-header">
+                        <div class="modal-handle"></div>
+                        <h2>Adicionar Story</h2>
+                        <i class="fa-solid fa-xmark close-icon" onclick="closeStoryPostModal()"></i>
+                    </div>
+                    <div class="modal-comments-list" style="padding: 20px;">
+                        <p style="margin: 0 0 10px; color: #262626;">Selecione uma imagem e adicione um texto rápido.</p>
+                        <input type="file" id="story-image-input" accept="image/*" style="width: 100%; margin-bottom: 12px;" />
+                        <input type="text" id="story-caption-input" placeholder="Texto da story..." style="width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #ddd;" />
+                    </div>
+                    <div class="modal-input-area" style="background: transparent; border-top: none;">
+                        <button class="post-comment-btn" id="story-post-btn">Postar Story</button>
+                    </div>
+                </div>
+            </div>
+            <section id="view-reels" class="view">
+                <div class="reels-container scrollable-area">
+                    <div class="reel-video dark-box">
+                        <div class="reel-content">
+                            <img src="https://picsum.photos/400/700?random=10">
+                            <div class="reel-overlay">
+                                <h3>@cyber_vibe</h3>
+                                <p>Explorando a cidade neon 🌃</p>
+                            </div>
+                        </div>
+                        <div class="reel-sidebar">
+                            <i class="fa-solid fa-heart"></i>
+                            <i class="fa-solid fa-comment"></i>
+                            <i class="fa-solid fa-share"></i>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-messages" class="view">
+                <div id="chat-list-container">
+                    <div class="messages-header">
+                        <h2>Mensagens</h2>
+                        <i class="fa-regular fa-pen-to-square"></i>
+                    </div>
+                    <div class="chat-list scrollable-area" id="chat-list"></div>
+                </div>
+
+                <div id="active-chat-view" class="chat-window" style="display: none;">
+                    <div class="chat-header">
+                        <i class="fa-solid fa-chevron-left" onclick="closeChat()"></i>
+                        <div class="chat-user-info">
+                            <img src="" id="active-chat-avatar" class="chat-avatar-mini">
+                            <span id="active-chat-name"></span>
+                        </div>
+                        <a href="/perfil/ID_DO_USUARIO" style="text-decoration: none; color: inherit;">
+                            <i class="fa-solid fa-circle-info" style="cursor: pointer;"></i>
+                        </a>
+                    </div>
+
+                    <div id="chat-messages-area" class="chat-messages scrollable-area">
+                    </div>
+
+                    <div class="chat-input-bar">
+                        <i class="fa-regular fa-face-smile"></i>
+                        <input type="text" id="chat-input" placeholder="Enviar mensagem...">
+                        <button id="send-message-btn" onclick="sendMessage()">Enviar</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-profile" class="view">
+                <div class="scrollable-area">
+
+                    <div class="profile-header-content">
+                        <div class="profile-avatar-row">
+                            <div class="profile-avatar-main">
+                                <img id="profile-avatar" src="" alt="Avatar">
+                                <button class="btn-edit-profile" onclick="handleEditProfile()">Editar perfil</button>
+                            </div>
+
+                            <div class="header-actions">
+                                <button id="open-settings-btn" class="btn-edit-profilee"><img class="imagem-config" src="./images/config.png"
+                                        alt="config"></button>
+                            </div>
+
+                            <div class="header-actions">
+                                <button id="open-settings-btn" class="btn-edit-profileee"><img class="imagem-config" src="./images/publicacao.png"
+                                        alt="config"></button>
+                            </div>
+                        </div>
+
+                        <div class="profile-user-details">
+                            <h2 class="display-name" id="profile-name">-</h2>
+                            <span class="user-handle" id="profile-username">-</span>
+
+                            <p class="profile-bio" id="profile-bio">-</p>
+
+                            <div class="profile-meta-info">
+                                <span id="profile-location"><i class="fa-solid fa-location-dot"></i> <span id="location-text">-</span></span>
+                                <span id="profile-link"><i class="fa-solid fa-link"></i> <a href="#" id="link-url" style="color: var(--cyan-primary); text-decoration: none;">-</a></span>
+                                <span id="profile-anniversary"><i class="fa-solid fa-calendar-days"></i> <span id="anniversary-text">-</span></span>
+                            </div>
+
+                            <div class="profile-stats">
+                                <div class="stat-item"><strong id="profile-following">0</strong> <span>Seguindo</span></div>
+                                <div class="stat-item"><strong id="profile-followers">0</strong> <span>Seguidores</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-tabs">
+                        <div class="tab-item active" onclick="switchProfileTab(this, 'posts')">Posts</div>
+                        <div class="tab-item" onclick="switchProfileTab(this, 'respostas')">Respostas</div>
+                        <div class="tab-item" onclick="switchProfileTab(this, 'destaques')">Destaques</div>
+                        <div class="tab-item" onclick="switchProfileTab(this, 'midia')">Mídia</div>
+                        <div class="tab-item" onclick="switchProfileTab(this, 'curtidas')">Curtidas</div>
+                        <div class="tab-item" onclick="switchProfileTab(this, 'salvos')">Salvos</div>
+                    </div>
+
+                    <div class="profile-content-area">
+                        <div id="tab-posts" class="profile-tab-content active">
+                            <div class="feed-post dark-box"
+                                style="width: 100%; max-width: 100%; border-radius: 0; background-color: black;">
+                                <p style="padding: 20px; text-align: center; color: white;">Seus posts aparecerão aqui.</p>
+                            </div>
+                        </div>
+
+                        <div id="tab-respostas" class="profile-tab-content">
+                            <p style="padding: 30px; text-align: center; color: white;">Você ainda não tem respostas.</p>
+                        </div>
+
+                        <div id="tab-destaques" class="profile-tab-content">
+                            <p style="padding: 30px; text-align: center; color: white;">Seus destaques aparecerão aqui.</p>
+                        </div>
+
+                        <div id="tab-midia" class="profile-tab-content">
+                            <p style="padding: 30px; text-align: center; color: white;">Fotos e vídeos que você postar aparecerão aqui.</p>
+                        </div>
+
+                        <div id="tab-curtidas" class="profile-tab-content">
+                            <p style="padding: 30px; text-align: center; color: white;">Posts que você curtiu aparecerão aqui.</p>
+                        </div>
+
+                        <div id="tab-salvos" class="profile-tab-content">
+                            <p style="padding: 30px; text-align: center; color: white;">Nenhum post salvo ainda.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="edit-profile-modal" class="modal-overlay edit-profile-fullscreen">
+        <div class="modal-content edit-profile-content">
+            <div class="modal-header edit-profile-header">
+                <h2>Editar Perfil</h2>
+                <span class="close-modal" onclick="closeEditProfileModal()">✕</span>
+            </div>
+            
+            <form id="edit-profile-form" class="edit-profile-form">
+                <div class="form-group">
+                    <label for="edit-display-name">Nome do Perfil</label>
+                    <input type="text" id="edit-display-name" placeholder="Seu nome de exibição">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-username">Nome de Usuário</label>
+                    <input type="text" id="edit-username" placeholder="Seu nome de usuário">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-bio">Biografia</label>
+                    <textarea id="edit-bio" placeholder="Conte um pouco sobre você..." rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-location">Localização</label>
+                    <input type="text" id="edit-location" placeholder="Sua localização (ex: São Paulo, Brasil)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-link">Link</label>
+                    <input type="url" id="edit-link" placeholder="https://exemplo.com/seu-site">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-anniversary">Data Comemorativa</label>
+                    <input type="date" id="edit-anniversary" placeholder="Sua data especial (ex: aniversário)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-avatar">Foto de Perfil</label>
+                    <input type="file" id="edit-avatar" accept="image/*">
+                    <small style="color: var(--text-gray);">Selecione uma imagem da sua galeria</small>
+                </div>
+
+                <div class="form-group toggle-group">
+                    <label for="show-suggestions-toggle">
+                        <span>Mostrar sugestões de contas no perfil</span>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="show-suggestions-toggle" class="toggle-checkbox">
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="privacy-link">
+                    <a href="#" onclick="window.open('https://example.com/privacy', '_blank'); return false;" style="color: var(--cyan-primary); text-decoration: underline; font-size: 0.9rem;">
+                        <i class="fa-solid fa-shield"></i> Termos de Privacidade
+                    </a>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="closeEditProfileModal()">Cancelar</button>
+                    <button type="submit" class="btn-save">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content dark-box">
+            <div class="modal-header">
+                <h2>Configurações</h2>
+                <span class="close-modal" onclick="closeSettingsModal()">&times;</span>
+            </div>
+
+            <div class="settings-content">
+                <div class="settings-section">
+                    <h3>Conta</h3>
+                    <button class="settings-btn" id="switch-account-btn">Alternar conta</button>
+                    <button class="settings-btn" id="archived-posts-btn">Posts arquivados</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Privacidade</h3>
+                    <label class="toggle-row">
+                        <span>Conta privada</span>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="privacy-toggle" class="toggle-checkbox">
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </label>
+
+                    <label class="toggle-row">
+                        <span>Mostrar sugestões de contas</span>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="show-suggestions" class="toggle-checkbox">
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </label>
+
+                    <div class="toggle-row">
+                        <span>Melhores amigos</span>
+                        <div class="list-with-input">
+                            <input type="text" id="best-friend-input" placeholder="Adicionar usuário...">
+                            <button id="add-best-friend-btn">+</button>
+                        </div>
+                    </div>
+                    <div id="best-friends-list" class="settings-list"></div>
+
+                    <div class="toggle-row">
+                        <span>Usuários bloqueados</span>
+                        <div class="list-with-input">
+                            <input type="text" id="blocked-user-input" placeholder="Bloquear usuário...">
+                            <button id="add-blocked-user-btn">+</button>
+                        </div>
+                    </div>
+                    <div id="blocked-users-list" class="settings-list"></div>
+
+                    <button class="settings-btn btn-logout" id="logout-btn" onclick="handleLogout()" style="margin-top: 15px;">
+                        <i class="fa-solid fa-sign-out-alt"></i> Sair da conta
+                    </button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Geral</h3>
+                    <label class="toggle-row">
+                        <span>Tema</span>
+                        <select id="theme-select">
+                            <option value="dark">Escuro</option>
+                            <option value="light">Claro</option>
+                        </select>
+                    </label>
+
+                    <label class="toggle-row">
+                        <span>Idioma</span>
+                        <select id="language-select">
+                            <option value="pt">Português</option>
+                            <option value="es">Español</option>
+                            <option value="en">English</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="api-client.js"></script>
+    <script src="script.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

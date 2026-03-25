@@ -1,0 +1,75 @@
+body {
+    background-color: #050505; /* Fundo escuro padrão do seu projeto */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Inter', 'Courier New', Courier, monospace;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.loading-screen {
+    display: flex;
+    gap: 15px; /* Espaçamento ajustado para 5 letras */
+}
+
+.loader {
+    width: 70px; /* Levemente aumentado pois temos menos letras */
+    height: 70px;
+    position: relative;
+}
+
+.loader svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 5px #5CE1E6);
+}
+
+.shape {
+    fill: none;
+    stroke: #5CE1E6; /* Ciano do EdenX */
+    stroke-width: 5px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 250;
+    stroke-dashoffset: 250;
+    animation: drawLetter 2.5s infinite ease-in-out;
+}
+
+/* Linha de brilho abaixo do nome */
+.glow-line {
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #5CE1E6, transparent);
+    margin-top: 15px;
+    box-shadow: 0 0 15px #5CE1E6;
+    animation: expandLine 2s infinite alternate;
+}
+
+.loading-text {
+    color: #5CE1E6;
+    margin-top: 20px;
+    letter-spacing: 3px;
+    font-size: 0.8rem;
+    text-shadow: 0 0 8px rgba(92, 225, 230, 0.8);
+    opacity: 0.8;
+}
+
+/* Animações */
+@keyframes drawLetter {
+    0% { stroke-dashoffset: 250; }
+    50% { stroke-dashoffset: 0; }
+    100% { stroke-dashoffset: -250; }
+}
+
+@keyframes expandLine {
+    0% { width: 0%; opacity: 0.2; }
+    100% { width: 100%; opacity: 1; }
+}

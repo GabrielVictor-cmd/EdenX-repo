@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading EdenX</title>
+    <link rel="stylesheet" href="loading.css">
+</head>
+<body>
+    <div class="container">
+        <div class="loading-screen">
+            <div class="loader">
+                <svg viewBox="0 0 100 100">
+                    <path class="shape" d="M70 25 H30 V75 H70 M30 50 H60" />
+                </svg>
+            </div>
+            <div class="loader">
+                <svg viewBox="0 0 100 100">
+                    <path class="shape" d="M70 25 V75 M70 55 A20 20 0 1 0 70 75" />
+                </svg>
+            </div>
+            <div class="loader">
+                <svg viewBox="0 0 100 100">
+                    <path class="shape" d="M30 60 H70 A20 20 0 1 0 35 45" />
+                </svg>
+            </div>
+            <div class="loader">
+                <svg viewBox="0 0 100 100">
+                    <path class="shape" d="M30 45 V75 M30 55 A20 20 0 0 1 70 55 V75" />
+                </svg>
+            </div>
+            <div class="loader">
+                <svg viewBox="0 0 100 100">
+                    <path class="shape" d="M30 25 L70 75 M70 25 L30 75" />
+                </svg>
+            </div>
+        </div>
+        
+        <div class="glow-line"></div>
+        <p class="loading-text">ESTABELECENDO CONEXÃO EDENX...</p>
+    </div>
+
+    <script>
+        // Redireciona para o login após 5 segundos
+        setTimeout(function () {
+            window.location.href = "../login/index.html"; 
+        }, 3000); 
+    </script>
+</body>
+</html>

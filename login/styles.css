@@ -1,0 +1,206 @@
+:root {
+    --primary-color: #5CE1E6;
+    --bg-dark: #050505;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(92, 225, 230, 0.2);
+    --text-color: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: var(--bg-dark);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; /* Impede scroll por causa da animação */
+}
+
+/* Canvas para o fundo animado */
+#bgCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+.login-container {
+    background: var(--glass-bg);
+    backdrop-filter: blur(15px); /* Efeito de vidro embaçado */
+    -webkit-backdrop-filter: blur(15px);
+    padding: 40px;
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(92, 225, 230, 0.05);
+    animation: fadeIn 1s ease-out;
+}
+
+.logo-container {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.logo-container h1 {
+    font-size: 3.5rem;
+    color: var(--text-color);
+    letter-spacing: 2px;
+    position: relative;
+    z-index: 1;
+}
+
+.logo-container span {
+    color: var(--primary-color);
+    text-shadow: 0 0 15px var(--primary-color);
+}
+
+.welcome-text {
+    color: var(--text-color);
+    margin-bottom: 25px;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.input-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.input-group i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary-color);
+    width: 20px;
+}
+
+.input-group input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    padding: 15px 15px 15px 45px;
+    border-radius: 10px;
+    color: white;
+    outline: none;
+    transition: 0.3s;
+}
+
+.input-group input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px rgba(92, 225, 230, 0.3);
+}
+
+.btn-login {
+    width: 100%;
+    padding: 15px;
+    background: var(--primary-color);
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 10px;
+    box-shadow: 0 0 20px rgba(92, 225, 230, 0.4);
+    transition: 0.3s;
+}
+
+.btn-login:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 30px rgba(92, 225, 230, 0.6);
+}
+
+.form-footer {
+    margin-top: 25px;
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+.link {
+    color: #ccc;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.link:hover {
+    color: var(--primary-color);
+}
+
+.highlight {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ... (Mantenha o código anterior e adicione estas linhas) ... */
+
+.info-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+/* Feedback visual para erro de senha (JS usará isso) */
+.input-error {
+    border-color: #ff4d4d !important;
+    box-shadow: 0 0 10px rgba(255, 77, 77, 0.3) !important;
+}
+
+/* Estilo do Botão Voltar */
+.btn-back {
+    position: fixed;
+    top: 30px;
+    left: 30px;
+    width: 45px;
+    height: 45px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px; /* Combina com o estilo dos inputs */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100; /* Garante que fique acima do canvas e do card */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.btn-back i {
+    width: 24px;
+    height: 24px;
+}
+
+.btn-back:hover {
+    background: var(--primary-color);
+    color: #000; /* Texto escuro para contraste com o ciano */
+    box-shadow: 0 0 20px var(--primary-color);
+    transform: translateX(-5px); /* Pequeno movimento lateral para reforçar a ideia de 'voltar' */
+}
+
+/* Ajuste para telas pequenas */
+@media (max-width: 600px) {
+    .btn-back {
+        top: 15px;
+        left: 15px;
+        width: 40px;
+        height: 40px;
+    }
+}
