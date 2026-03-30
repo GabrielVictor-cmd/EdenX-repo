@@ -215,14 +215,27 @@ exports.getFollowers = async (req, res) => {
   }
 };
 
+exports.getFollowing = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const following = await User.getFollowing(userId);
+
+    res.json({ success: true, data: following });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao buscar seguindo' });
+  }
+};
+
 exports.addFollower = async (req, res) => {
   try {
     const userId = req.user.id;
     const { followId } = req.params;
 
     await User.addFollower(followId, userId);
+    const followedUser = await User.findById(followId);
 
-    res.json({ message: 'Seguindo este usuário' });
+    res.json({ message: 'Seguindo este usuário', followedUser });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Erro ao seguir usuário' });
@@ -235,8 +248,9 @@ exports.removeFollower = async (req, res) => {
     const { followId } = req.params;
 
     await User.removeFollower(followId, userId);
+    const followedUser = await User.findById(followId);
 
-    res.json({ message: 'Deixou de seguir este usuário' });
+    res.json({ message: 'Deixou de seguir este usuário', followedUser });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Erro ao deixar de seguir' });

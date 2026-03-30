@@ -88,10 +88,28 @@ class User {
     }
   }
 
+  static async getFollowing(userId, limit = 50) {
+    const query = `
+      SELECT u.id, u.username, u.avatar_url 
+      FROM users u
+      JOIN followers f ON u.id = f.user_id
+      WHERE f.follower_id = ? LIMIT ?
+    `;
+    try {
+      const result = await pool.query(query, [userId, limit]);
+      return result.rows || [];
+    } catch (error) {
+      console.error('Erro ao buscar seguindo:', error);
+      return [];
+    }
+  }
+
   static async addFollower(userId, followerId) {
     const query = `INSERT INTO followers (user_id, follower_id) VALUES (?, ?)`;
     try {
       await pool.execute(query, [userId, followerId]);
+      await pool.execute(`UPDATE users SET followers = followers + 1 WHERE id = ?`, [userId]);
+      await pool.execute(`UPDATE users SET following = following + 1 WHERE id = ?`, [followerId]);
     } catch (error) {
       console.error('Erro ao adicionar seguidor:', error);
       throw error;
@@ -102,6 +120,8 @@ class User {
     const query = `DELETE FROM followers WHERE user_id = ? AND follower_id = ?`;
     try {
       await pool.execute(query, [userId, followerId]);
+      await pool.execute(`UPDATE users SET followers = GREATEST(followers - 1, 0) WHERE id = ?`, [userId]);
+      await pool.execute(`UPDATE users SET following = GREATEST(following - 1, 0) WHERE id = ?`, [followerId]);
     } catch (error) {
       console.error('Erro ao remover seguidor:', error);
       throw error;

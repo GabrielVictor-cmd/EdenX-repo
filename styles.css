@@ -62,7 +62,7 @@ body { background-color: var(--bg-dark); color: white; height: 100vh; overflow: 
 /* Post */
 .feed-post { margin: 15px auto; max-width: 500px; width: 95%; background: var(--dark-panel); border-radius: 0; border-bottom: 1px solid #000000; padding-bottom: 15px; }
 .post-header { display: flex; align-items: center; gap: 10px; padding: 10px; }
-.post-image img { width: 100%; max-height: 600px; object-fit: cover; }
+.post-image img { width: 100%; height: auto; object-fit: contain; }
 .post-actions { display: flex; justify-content: space-between; padding: 10px; font-size: 1.5rem; }
 .action-left { display: flex; gap: 15px; }
 .post-info { padding: 0 10px; font-size: 0.9rem; line-height: 1.4; }
@@ -82,7 +82,7 @@ body { background-color: var(--bg-dark); color: white; height: 100vh; overflow: 
 .search-input { background: none; border: none; color: white; width: 100%; outline: none; }
 
 /* Interações */
-.fa-heart.active { color: #ff3040; animation: likeJump 0.45s ease; }
+.fa-heart.active { color: white; animation: likeJump 0.45s ease; }
 
 /* make displayed usernames white */
 .username,
@@ -113,6 +113,7 @@ body { background-color: var(--bg-dark); color: white; height: 100vh; overflow: 
     width: 100%;
     height: auto;
     display: block;
+    
 }
 
 .post-actions {
@@ -131,7 +132,7 @@ body { background-color: var(--bg-dark); color: white; height: 100vh; overflow: 
     cursor: pointer;
     transition: color 0.2s ease, transform 0.2s ease;
     font-size: 1.5rem;
-    color: #262626;
+    color: white;
 }
 
 .post-actions i:hover {
@@ -139,9 +140,9 @@ body { background-color: var(--bg-dark); color: white; height: 100vh; overflow: 
 }
 
 /* Classes dinâmicas para as ações */
-.liked { color: #e0245e; }
-.reposted { color: #17bf63; }
-.saved { color: #fce83a; }
+.liked { color: white; }
+.reposted { color: white; }
+.saved { color: white; }
 
 .post-info {
     padding: 0 15px 15px;
@@ -2271,6 +2272,7 @@ body.light-theme .username {
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.12);
+    margin: auto 100px;
 }
 
 .post-card-header {
@@ -2408,7 +2410,7 @@ body.light-theme .username {
 }
 
 .post-stats strong {
-    color: #171717;
+    color: #ffffff;
 }
 
 .post-like-btn i.active {

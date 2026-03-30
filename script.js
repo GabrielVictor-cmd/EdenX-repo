@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const storiesWrapper = document.getElementById('stories-wrapper');
     const searchResults = document.getElementById('search-results');
     const searchInput = document.getElementById('main-search');
@@ -211,10 +211,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const file = event.target.files && event.target.files[0];
             if (!file) return;
 
+            selectedImageFile = file;
             selectedImageName.textContent = file.name;
             const reader = new FileReader();
             reader.onload = (e) => {
                 selectedImageDataUrl = e.target.result;
+                const previewEl = document.getElementById('post-image-preview');
+                if (previewEl) {
+                    previewEl.innerHTML = `<img src="${selectedImageDataUrl}" alt="Prévia da imagem" style="width:100%;max-height:250px;object-fit:contain;border-radius:8px;">`;
+                    previewEl.style.display = 'block';
+                }
             };
             reader.readAsDataURL(file);
         });
@@ -234,24 +240,95 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const postsData = [
-        {
-            id: 'post-1',
-            author: 'Angelina Hall',
-            avatar: 'https://i.pravatar.cc/150?u=angelina',
-            time: '2 hours ago',
-            text: 'I have just spent 3 amazing days in my hometown! 😍',
-            image: 'https://picsum.photos/600/400?random=45',
-            location: 'New York, USA',
-            likes: 154,
-            comments: [
-                { user: 'neon_nina', text: 'Que foto incrível!', time: '1h' },
-                { user: 'cyber_punk', text: 'Uau! Me conta mais 🙂', time: '2h' }
-            ],
-            shares: 27,
-            repostedBy: []
+    let postsData = [];
+    let selectedImageFile = null;
+    const likedPosts = new Map();
+    const savedPosts = new Map();
+
+    function updateLikedTab() {
+        const likedContainer = document.getElementById('tab-curtidas');
+        if (!likedContainer) return;
+        likedContainer.innerHTML = '';
+
+        if (likedPosts.size === 0) {
+            likedContainer.innerHTML = '<p style="padding: 20px; text-align: center; color: white;">Nenhum post curtido ainda.</p>';
+            return;
         }
-    ];
+
+        for (const post of likedPosts.values()) {
+            const card = document.createElement('div');
+            card.className = 'feed-post dark-box';
+            card.innerHTML = `
+                <div class="post-header"><span class="username">@${post.author}</span></div>
+                <div class="post-container">
+                    ${post.image ? `<div class="post-image"><img src="${post.image}" alt="Post"></div>` : ''}
+                    <div class="post-info"><p class="post-caption"><strong>@${post.author}</strong> ${post.text}</p></div>
+                </div>
+            `;
+            likedContainer.appendChild(card);
+        }
+    }
+
+    function updateSavedTab() {
+        const savedContainer = document.getElementById('tab-salvos');
+        if (!savedContainer) return;
+        savedContainer.innerHTML = '';
+
+        if (savedPosts.size === 0) {
+            savedContainer.innerHTML = '<p style="padding: 20px; text-align: center; color: white;">Nenhum post salvo ainda.</p>';
+            return;
+        }
+
+        for (const post of savedPosts.values()) {
+            const card = document.createElement('div');
+            card.className = 'feed-post dark-box';
+            card.innerHTML = `
+                <div class="post-header"><span class="username">@${post.author}</span></div>
+                <div class="post-container">
+                    ${post.image ? `<div class="post-image"><img src="${post.image}" alt="Post"></div>` : ''}
+                    <div class="post-info"><p class="post-caption"><strong>@${post.author}</strong> ${post.text}</p></div>
+                </div>
+            `;
+            savedContainer.appendChild(card);
+        }
+    }
+
+    function renderLikedAndSaved() {
+        updateLikedTab();
+        updateSavedTab();
+    }
+
+    function formatPostItem(post) {
+        return {
+            id: post.id || `post-${Date.now()}`,
+            author: post.username || post.author || (SESSION.username ? SESSION.username.replace('@', '') : 'Você'),
+            avatar: post.avatar_url || post.avatar || (SESSION.avatarUrl ? SESSION.avatarUrl : 'https://i.pravatar.cc/150?u=anon'),
+            time: post.created_at ? new Date(post.created_at).toLocaleString('pt-BR') : post.time || 'Agora',
+            text: post.caption || post.text || '',
+            image: post.image_url || post.image || '',
+            location: post.location || '',
+            likes: post.likes_count || post.likes || 0,
+            comments: Array.isArray(post.comments) ? post.comments : [],
+            shares: post.shares || 0,
+            repostedBy: post.repostedBy || []
+        };
+    }
+
+    async function loadFeed() {
+        const result = await getFeed(20, 0);
+
+        if (result && result.success && Array.isArray(result.data)) {
+            postsData = result.data.map(formatPostItem);
+        } else if (result && Array.isArray(result)) {
+            // Caso backend retorne diretamente array (fluxo antigo)
+            postsData = result.map(formatPostItem);
+        } else {
+            // Mantém feed vazio e eventualmente mostra mensagem
+            postsData = [];
+        }
+
+        renderFeed();
+    }
 
     function createPostCard(post) {
         const card = document.createElement('div');
@@ -271,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ${post.location ? `<div class="post-location"><i class="fa-solid fa-location-dot"></i> ${post.location}</div>` : ''}
             ${post.image ? `
             <div class="post-image-wrapper">
-                <img src="${post.image}" alt="Post image" class="post-image" />
+                <img src="${post.image.startsWith('http') ? post.image : (API_BASE_URL.replace(/\/api$/, '') + post.image)}" alt="Post image" class="post-image" />
             </div>` : ''}
             <div class="post-actions">
                 <div class="post-actions-left">
@@ -311,15 +388,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const repostBtn = card.querySelector('.post-repost-btn');
         const repostAvatar = card.querySelector('.repost-avatar');
 
-        likeBtn.addEventListener('click', () => {
-            const icon = likeBtn.querySelector('i');
-            icon.classList.toggle('fa-regular');
-            icon.classList.toggle('fa-solid');
-            icon.classList.toggle('active');
-
-            const current = parseInt(likeCount.textContent, 10);
-            likeCount.textContent = icon.classList.contains('active') ? current + 1 : current - 1;
-        });
 
         if (commentBtn) {
             commentBtn.addEventListener('click', () => {
@@ -328,10 +396,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (shareBtn) {
-            shareBtn.addEventListener('click', () => {
+            shareBtn.addEventListener('click', async () => {
                 post.shares = (post.shares || 0) + 1;
                 renderFeed();
-                alert('Post compartilhado!');
+                await openShareModal(post);
             });
         }
 
@@ -350,6 +418,42 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        const saveBtn = card.querySelector('.icon-btn[aria-label="Salvar"] i');
+        if (saveBtn) {
+            saveBtn.style.color = 'white';
+            saveBtn.addEventListener('click', () => {
+                saveBtn.classList.toggle('fa-regular');
+                saveBtn.classList.toggle('fa-solid');
+                saveBtn.classList.toggle('saved');
+
+                const isSaved = saveBtn.classList.contains('saved');
+                if (isSaved) {
+                    savedPosts.set(post.id, post);
+                } else {
+                    savedPosts.delete(post.id);
+                }
+                renderLikedAndSaved();
+            });
+        }
+
+        likeBtn.addEventListener('click', () => {
+            const icon = likeBtn.querySelector('i');
+            icon.classList.toggle('fa-regular');
+            icon.classList.toggle('fa-solid');
+            icon.classList.toggle('active');
+
+            const current = parseInt(likeCount.textContent, 10);
+            const count = icon.classList.contains('active') ? current + 1 : Math.max(0, current - 1);
+            likeCount.textContent = count;
+
+            if (icon.classList.contains('active')) {
+                likedPosts.set(post.id, post);
+            } else {
+                likedPosts.delete(post.id);
+            }
+            renderLikedAndSaved();
+        });
+        
         return card;
     }
 
@@ -362,39 +466,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (shareBtn && createInput) {
-        shareBtn.addEventListener('click', () => {
+        shareBtn.addEventListener('click', async () => {
             const content = createInput.value.trim();
-            if (!content) return;
+            if (!content && !selectedImageFile) {
+                alert('Escreva algo ou selecione uma imagem para publicar.');
+                return;
+            }
 
-            const newPost = {
-                id: `post-${Date.now()}`,
-                author: currentUser.username.replace('@', ''),
-                avatar: currentUser.avatarUrl,
-                time: 'Just now',
-                text: content,
-                image: selectedImageDataUrl || '',
-                location: selectedLocation || '',
-                likes: 0,
-                comments: [],
-                shares: 0,
-                repostedBy: []
-            };
+            let result;
+            try {
+                if (selectedImageFile) {
+                    result = await createPost(content, null, selectedImageFile);
+                } else {
+                    result = await createPost(content);
+                }
+            } catch (error) {
+                console.error('Erro criar post:', error);
+                result = { success: false };
+            }
 
-            postsData.unshift(newPost);
-            renderFeed();
+            if (result && result.success) {
+                alert('Post publicado com sucesso!');
 
-            // Resetar inputs (imagem, localização, texto)
-            createInput.value = '';
-            selectedImageDataUrl = null;
-            selectedLocation = '';
-            if (locationInput) locationInput.value = '';
-            if (locationRow) locationRow.style.display = 'none';
-            if (selectedImageName) selectedImageName.textContent = 'Nenhuma imagem selecionada';
-            if (imageInput) imageInput.value = '';
+                createInput.value = '';
+                selectedImageDataUrl = null;
+                selectedImageFile = null;
+                selectedLocation = '';
+                if (locationInput) locationInput.value = '';
+                if (locationRow) locationRow.style.display = 'none';
+                if (selectedImageName) selectedImageName.textContent = 'Nenhuma imagem selecionada';
+                if (imageInput) imageInput.value = '';
+
+                await loadFeed();
+                if (typeof loadUserProfile === 'function') await loadUserProfile();
+
+                return;
+            }
+
+            alert('Não foi possível publicar o post. Tente novamente.');
         });
     }
 
-    renderFeed();
+    await loadFeed();
 
     // 4. Sistema de Busca Funcional
     // 3. Sistema de Busca Funcional
@@ -512,25 +625,68 @@ function openCommentsForPost(postId) {
     toggleCommentsModal(true);
 }
 
-// 4. Lógica para habilitar o botão "Publicar"
-const modalInput = document.getElementById('modal-comment-input');
-const postBtn = document.querySelector('.post-comment-btn');
+async function openShareModal(post) {
+    const overlay = document.createElement('div');
+    overlay.className = 'comments-modal-overlay';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 10000;';
 
-if(modalInput && postBtn) {
-    modalInput.addEventListener('input', () => {
-        if (modalInput.value.trim() !== '') {
-            postBtn.classList.add('active');
-        } else {
-            postBtn.classList.remove('active');
+    const modal = document.createElement('div');
+    modal.className = 'comments-modal';
+    modal.style.cssText = 'width: 90%; max-width: 420px; height: auto; max-height: 80%; overflow-y: auto; padding: 16px;';
+    modal.innerHTML = `
+        <div class="modal-header">
+            <h2>Compartilhar post</h2>
+            <span class="close-modal" style="cursor:pointer;" id="close-share-modal">&times;</span>
+        </div>
+        <div style="margin:8px 0; color:#fff;">Escolha um ou mais contatos para enviar:</div>
+        <div id="share-following-list" style="max-height:300px; overflow-y:auto; margin-bottom:12px;"></div>
+        <button id="share-send-btn" class="btn-share">Enviar</button>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    const closeButton = document.getElementById('close-share-modal');
+    if (closeButton) closeButton.addEventListener('click', () => overlay.remove());
+
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+    const listContainer = document.getElementById('share-following-list');
+    const followingRes = await getFollowing(SESSION.userId);
+
+    if (!followingRes.success || !Array.isArray(followingRes.data) || followingRes.data.length === 0) {
+        listContainer.innerHTML = '<p style="color:#ccc;">Você não segue ninguém ainda para compartilhar.</p>';
+        return;
+    }
+
+    listContainer.innerHTML = followingRes.data.map(user => `
+        <label style="display:flex; align-items:center; gap:8px; color:#fff; margin-bottom:8px;">
+            <input type="checkbox" value="${user.id}" />
+            <img src="${user.avatar_url || 'https://i.pravatar.cc/150?u=' + user.username}" style="width:28px; height:28px; border-radius:50%; object-fit:cover;" />
+            <span>${user.username}</span>
+        </label>
+    `).join('');
+
+    document.getElementById('share-send-btn').addEventListener('click', () => {
+        const checked = [...listContainer.querySelectorAll('input[type=checkbox]:checked')].map(chk => chk.value);
+        if (checked.length === 0) {
+            alert('Selecione pelo menos uma pessoa para enviar.');
+            return;
         }
+
+        // Simulação de envio de compartilhamento (pode integrar endpoint real se necessário)
+        alert(`Post compartilhado com ${checked.length} usuário(s)!`);
+        overlay.remove();
     });
 }
 
-// 5. Função para publicar o comentário via modal
-function postModalComment() {
-    if (!modalInput || !postBtn) return;
+async function postModalComment() {
+    const modalInput = document.getElementById('modal-comment-input');
+    const postBtn = document.getElementById('modal-post-comment-btn');
+    if (!modalInput || !postBtn || !currentCommentPostId) return;
+
     const commentText = modalInput.value.trim();
-    if (commentText === '') return;
+    if (!commentText) return;
 
     const post = postsData.find(p => p.id === currentCommentPostId);
     if (!post) return;
@@ -543,6 +699,14 @@ function postModalComment() {
 
     post.comments = post.comments || [];
     post.comments.push(newComment);
+
+    try {
+        if (typeof addComment === 'function') {
+            await addComment(currentCommentPostId, commentText);
+        }
+    } catch (error) {
+        console.error('Erro ao salvar comentário no backend:', error);
+    }
 
     const modalCommentsList = document.getElementById('modal-comments-list');
     if (modalCommentsList) {
@@ -564,6 +728,11 @@ function postModalComment() {
     modalInput.value = '';
     postBtn.classList.remove('active');
     toggleCommentsModal(false);
+}
+
+const modalPostCommentBtn = document.getElementById('modal-post-comment-btn');
+if (modalPostCommentBtn) {
+    modalPostCommentBtn.addEventListener('click', postModalComment);
 }
 
 // 6. Função para criar o distintivo de republicação

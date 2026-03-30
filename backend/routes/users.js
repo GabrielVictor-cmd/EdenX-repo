@@ -51,6 +51,7 @@ router.get('/profile/:username', userController.getUserProfile);
 
 // Seguidores
 router.get('/:userId/followers', userController.getFollowers);
+router.get('/:userId/following', userController.getFollowing);
 router.post('/:followId/follow', auth, userController.addFollower);
 router.delete('/:followId/unfollow', auth, userController.removeFollower);
 

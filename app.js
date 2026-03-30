@@ -98,6 +98,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Carregar conversa de chat
   await loadChatList();
 
+  // Carregar perfil do usuário atual
+  if (SESSION.isAuthenticated) {
+    await loadUserProfile();
+  }
+
   // Listeners para busca funcional
   setupSearchListener();
 
@@ -106,6 +111,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // WebSocket listeners
   setupWebSocketListeners();
+
+  const attachBtn = document.getElementById('chat-attach-btn');
+  const mediaInput = document.getElementById('chat-media-input');
+
+  if (attachBtn && mediaInput) {
+    attachBtn.addEventListener('click', () => {
+      mediaInput.click();
+    });
+  }
 });
 
 // ====================================================
@@ -339,7 +353,7 @@ function setupSearchListener() {
 
           userEl.addEventListener('click', () => {
             // Abrir perfil do usuário
-            console.log('Abrindo perfil de:', user.username);
+            openUserProfile(user.username);
           });
 
           searchResults.appendChild(userEl);
@@ -417,7 +431,23 @@ async function openChat(userId, username, avatarUrl) {
       const isOwn = msg.sender_id === SESSION.userId;
       const msgEl = document.createElement('div');
       msgEl.className = `message-bubble ${isOwn ? 'sent' : 'received'}`;
-      msgEl.textContent = msg.message_text;
+
+      if (msg.media_url) {
+        const baseUrl = API_BASE_URL.replace(/\/api$/, '');
+        if (msg.media_type === 'video') {
+          msgEl.innerHTML = `<video controls style="max-width: 240px; max-height: 180px;"><source src="${baseUrl}${msg.media_url}" type="video/mp4" /></video>`;
+        } else {
+          msgEl.innerHTML = `<img src="${baseUrl}${msg.media_url}" alt="Mídia" style="max-width: 240px; max-height: 180px;">`;
+        }
+        if (msg.message_text) {
+          const textEl = document.createElement('p');
+          textEl.textContent = msg.message_text;
+          msgEl.appendChild(textEl);
+        }
+      } else {
+        msgEl.textContent = msg.message_text;
+      }
+
       messagesArea.appendChild(msgEl);
     });
 
@@ -434,35 +464,61 @@ function closeChat() {
   window.activeChatUserId = null;
 }
 
-async function sendMessage() {
+async function handleSendMessage() {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
+  const mediaInput = document.getElementById('chat-media-input');
+  const mediaFile = mediaInput ? mediaInput.files[0] : null;
 
-  if (!text || !window.activeChatUserId) return;
+  if (!window.activeChatUserId || (!text && !mediaFile)) return;
+
+  let mediaUrl = null;
+  let mediaType = null;
+
+  if (mediaFile) {
+    const uploadRes = await uploadMessageMedia(mediaFile);
+    if (uploadRes.success) {
+      mediaUrl = uploadRes.data.mediaUrl;
+      mediaType = uploadRes.data.mediaType;
+    } else {
+      alert('Falha ao enviar mídia: ' + (uploadRes.error || 'Erro desconhecido'));
+      return;
+    }
+  }
 
   if (SESSION.isAuthenticated) {
-    const result = await sendMessage(window.activeChatUserId, text);
-    
+    const result = await sendMessage(window.activeChatUserId, text, mediaUrl, mediaType);
+
     if (result.success) {
-      // Adicionar mensagem visualmente
       const messagesArea = document.getElementById('chat-messages-area');
       const msgEl = document.createElement('div');
       msgEl.className = 'message-bubble sent';
-      msgEl.textContent = text;
+
+      if (mediaUrl) {
+        const baseUrl = API_BASE_URL.replace(/\/api$/, '');
+        if (mediaType === 'video') {
+          msgEl.innerHTML = `<video controls style="max-width: 240px; max-height: 180px;"><source src="${baseUrl}${mediaUrl}" type="video/mp4" /></video>`;
+        } else {
+          msgEl.innerHTML = `<img src="${baseUrl}${mediaUrl}" alt="Mídia" style="max-width: 240px; max-height: 180px;">`;
+        }
+        if (text) {
+          const textEl = document.createElement('p');
+          textEl.textContent = text;
+          msgEl.appendChild(textEl);
+        }
+      } else {
+        msgEl.textContent = text;
+      }
+
       messagesArea.appendChild(msgEl);
       messagesArea.scrollTop = messagesArea.scrollHeight;
     }
-  } else {
-    // Modo demo
-    const messagesArea = document.getElementById('chat-messages-area');
-    const msgEl = document.createElement('div');
-    msgEl.className = 'message-bubble sent';
-    msgEl.textContent = text;
-    messagesArea.appendChild(msgEl);
-    messagesArea.scrollTop = messagesArea.scrollHeight;
   }
 
   input.value = '';
+  if (mediaInput) {
+    mediaInput.value = '';
+  }
 }
 
 // ====================================================
@@ -503,96 +559,172 @@ function setupWebSocketListeners() {
 // ====================================================
 
 async function loadUserProfile() {
-  // Apenas se autenticado
   if (!SESSION.isAuthenticated) {
     return;
   }
 
   const result = await getProfile();
+  if (!result.success) return;
 
-  if (result.success) {
-    const user = result.data;
-    
-    // Atualizar SESSION
-    SESSION.displayName = user.display_name;
+  await renderProfileDetails(result.data, true);
+}
+
+async function openUserProfile(username) {
+  if (!username) return;
+
+  // Mudar view para perfil
+  document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+  document.querySelector('[data-target="view-profile"]').classList.add('active');
+  document.getElementById('view-profile').classList.add('active');
+
+  const result = await getPublicUserProfile(username);
+  if (!result.success) {
+    alert('Usuário não encontrado.');
+    return;
+  }
+
+  await renderProfileDetails(result.data, (SESSION.username === result.data.username));
+}
+
+async function renderProfileDetails(user, isSelf) {
+  const followBtn = document.getElementById('profile-follow-btn');
+  const messageBtn = document.getElementById('profile-message-btn');
+  const editBtn = document.getElementById('btn-edit-profile');
+
+  document.getElementById('profile-name').textContent = user.display_name || user.username;
+  document.getElementById('profile-username').textContent = '@' + user.username;
+  document.getElementById('profile-bio').textContent = user.bio || 'Sem bio';
+  document.getElementById('profile-avatar').src = normalizeAvatarUrl(user.avatar_url) || 'https://i.pravatar.cc/150?u=' + user.username;
+  document.getElementById('profile-followers').textContent = user.followers || 0;
+  document.getElementById('profile-following').textContent = user.following || 0;
+
+  const locationElem = document.getElementById('location-text');
+  const linkElem = document.getElementById('link-url');
+  const anniversaryElem = document.getElementById('anniversary-text');
+
+  if(locationElem) locationElem.textContent = user.location || '-';
+  if(linkElem) {
+    linkElem.textContent = user.link ? 'Link' : '-';
+    linkElem.href = user.link || '#';
+  }
+  if(anniversaryElem) {
+    if (user.anniversary) {
+      const date = new Date(user.anniversary + 'T00:00:00');
+      anniversaryElem.textContent = date.toLocaleDateString('pt-BR');
+    } else {
+      anniversaryElem.textContent = '-';
+    }
+  }
+
+  if (isSelf) {
+    if (followBtn) followBtn.style.display = 'none';
+    if (messageBtn) messageBtn.style.display = 'none';
+    if (editBtn) editBtn.style.display = 'inline-block';
+  } else {
+    if (followBtn) {
+      followBtn.style.display = 'inline-block';
+      followBtn.textContent = 'Seguir';
+      followBtn.onclick = async () => {
+        const res = await followUser(user.id);
+        if (res.success) {
+          followBtn.textContent = 'Seguindo';
+          document.getElementById('profile-followers').textContent = (parseInt(document.getElementById('profile-followers').textContent, 10) || 0) + 1;
+        }
+      };
+    }
+    if (messageBtn) {
+      messageBtn.style.display = 'inline-block';
+      messageBtn.onclick = () => {
+        alert('Abra o chat com @' + user.username + ' (implemente conversa multimídia).');
+      };
+    }
+    if (editBtn) editBtn.style.display = 'none';
+  }
+
+  // Atualiza sessão com dados se próprio perfil
+  if (isSelf) {
     SESSION.username = user.username;
+    SESSION.avatarUrl = normalizeAvatarUrl(user.avatar_url);
     SESSION.bio = user.bio;
     SESSION.location = user.location;
     SESSION.link = user.link;
     SESSION.anniversary = user.anniversary;
-    SESSION.avatarUrl = user.avatar_url;
-    SESSION.followers = user.followers;
-    SESSION.following = user.following;
-    
-    // Atualizar localStorage
-    localStorage.setItem('edenx_displayName', user.display_name || '');
-    localStorage.setItem('edenx_username', user.username || '');
+    localStorage.setItem('edenx_username', user.username);
+    localStorage.setItem('edenx_avatarUrl', SESSION.avatarUrl);
     localStorage.setItem('edenx_bio', user.bio || '');
-    localStorage.setItem('edenx_location', user.location || '');
-    localStorage.setItem('edenx_link', user.link || '');
-    localStorage.setItem('edenx_anniversary', user.anniversary || '');
-    localStorage.setItem('edenx_avatarUrl', user.avatar_url || '');
-    localStorage.setItem('edenx_followers', user.followers || 0);
-    localStorage.setItem('edenx_following', user.following || 0);
-    
-    // Atualizar HTML
-    document.getElementById('profile-name').textContent = user.display_name || user.username;
-    document.getElementById('profile-username').textContent = '@' + user.username;
-    document.getElementById('profile-bio').textContent = user.bio || 'Sem bio';
-    document.getElementById('profile-avatar').src = normalizeAvatarUrl(user.avatar_url) || 'https://i.pravatar.cc/150?u=' + user.username;
-    document.getElementById('profile-followers').textContent = user.followers || 0;
-    document.getElementById('profile-following').textContent = user.following || 0;
-    
-    // Atualizar novos campos
-    const locationElem = document.getElementById('location-text');
-    const linkElem = document.getElementById('link-url');
-    const anniversaryElem = document.getElementById('anniversary-text');
-    
-    if(locationElem) locationElem.textContent = user.location || '-';
-    if(linkElem) {
-      linkElem.textContent = user.link ? 'Link' : '-';
-      linkElem.href = user.link || '#';
-    }
-    if(anniversaryElem) {
-      if (user.anniversary) {
-        // Evita deslocamento de timezone adicionando T00:00:00
-        const date = new Date(user.anniversary + 'T00:00:00');
-        anniversaryElem.textContent = date.toLocaleDateString('pt-BR');
-      } else {
-        anniversaryElem.textContent = '-';
-      }
-    }
-    
-    // Carregar posts do perfil
-    await loadProfilePosts(user.id);
   }
+
+  // Preenche feed e abas
+  await loadProfilePosts(user.id, user.username);
+  if (typeof renderLikedAndSaved === 'function') {
+    renderLikedAndSaved();
+  }
+  // Atualiza contadores de sessão
+  document.getElementById('profile-followers').textContent = user.followers || 0;
+  document.getElementById('profile-following').textContent = user.following || 0;
 }
 
-async function loadProfilePosts(userId) {
+async function loadProfilePosts(userId, username) {
   const result = await getUserPosts(userId);
+  const serverBase = API_BASE_URL.replace(/\/api$/, '');
 
-  if (result.success && result.data.length > 0) {
-    const postsContainer = document.getElementById('tab-posts');
-    postsContainer.innerHTML = '';
+  const postsContainer = document.getElementById('tab-posts');
+  const mediaContainer = document.getElementById('tab-midia');
+  const highlightsContainer = document.getElementById('tab-destaques');
 
+  postsContainer.innerHTML = '';
+  mediaContainer.innerHTML = '';
+  highlightsContainer.innerHTML = '';
+
+  if (result.success && Array.isArray(result.data) && result.data.length > 0) {
     result.data.forEach(post => {
       const postEl = document.createElement('div');
       postEl.className = 'feed-post dark-box';
       postEl.innerHTML = `
         <div class="post-header">
-          <span class="username">@${SESSION.username}</span>
+          <span class="username">@${username}</span>
         </div>
         <div class="post-container">
-          <div class="post-image">
-            <img src="${post.image_url}" alt="Post">
-          </div>
+          ${post.image_url ? `<div class="post-image"><img src="${post.image_url.startsWith('http') ? post.image_url : serverBase + post.image_url}" alt="Post"></div>` : ''}
           <div class="post-info">
-            <p class="post-caption"><strong>@${SESSION.username}</strong> ${post.caption}</p>
+            <p class="post-caption"><strong>@${username}</strong> ${post.caption || ''}</p>
           </div>
         </div>
       `;
       postsContainer.appendChild(postEl);
+
+      if (post.image_url) {
+        const mediaEl = document.createElement('div');
+        mediaEl.className = 'feed-post dark-box';
+        mediaEl.innerHTML = `
+          <div class="post-image"><img src="${post.image_url.startsWith('http') ? post.image_url : serverBase + post.image_url}" alt="Mídia"></div>
+          <div class="post-info"><p><strong>@${username}</strong> ${post.caption || ''}</p></div>
+        `;
+        mediaContainer.appendChild(mediaEl);
+      }
     });
+  } else {
+    postsContainer.innerHTML = '<p style="padding:20px;color:white;text-align:center;">Nenhum post encontrado.</p>';
+    mediaContainer.innerHTML = '<p style="padding:20px;color:white;text-align:center;">Nenhuma mídia disponível.</p>';
+  }
+
+  const storiesResult = await getUserStories(userId);
+  if (storiesResult.success && Array.isArray(storiesResult.data) && storiesResult.data.length > 0) {
+    storiesResult.data.forEach(story => {
+      const storyEl = document.createElement('div');
+      storyEl.className = 'feed-post dark-box';
+      storyEl.innerHTML = `
+        <div class="post-header"><span class="username">@${username}</span><small>Story</small></div>
+        <div class="post-container">
+          <div class="post-image"><img src="${story.image_url}" alt="Story"></div>
+          <div class="post-info"><p>Postado em: ${new Date(story.created_at).toLocaleString('pt-BR')}</p></div>
+        </div>
+      `;
+      highlightsContainer.appendChild(storyEl);
+    });
+  } else {
+    highlightsContainer.innerHTML = '<p style="padding:20px;color:white;text-align:center;">Nenhuma história ativa agora.</p>';
   }
 }
 

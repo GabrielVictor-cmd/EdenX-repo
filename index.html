@@ -54,8 +54,9 @@
                         </div>
 
                         <input type="file" id="create-post-image-input" accept="image/*" style="display:none;" />
+                        <div id="post-image-preview" style="display:none; margin-top:8px;"></div>
                         <div class="create-location-row" id="create-location-row" style="display:none;">
-                            <input id="create-post-location" type="text" placeholder="Adicionar local..." />
+                            <input id="create-post-location" style="color: white;" type="text" placeholder="Adicionar local..." />
                         </div>
                     </div>
 
@@ -160,8 +161,10 @@
 
                     <div class="chat-input-bar">
                         <i class="fa-regular fa-face-smile"></i>
+                        <button id="chat-attach-btn" class="icon-btn" title="Anexar imagem/vídeo" style="margin-right:5px;"><i class="fa-solid fa-paperclip"></i></button>
+                        <input type="file" id="chat-media-input" accept="image/*,video/*" style="display:none;">
                         <input type="text" id="chat-input" placeholder="Enviar mensagem...">
-                        <button id="send-message-btn" onclick="sendMessage()">Enviar</button>
+                        <button id="send-message-btn" onclick="handleSendMessage()">Enviar</button>
                     </div>
                 </div>
             </section>
@@ -173,17 +176,14 @@
                         <div class="profile-avatar-row">
                             <div class="profile-avatar-main">
                                 <img id="profile-avatar" src="" alt="Avatar">
-                                <button class="btn-edit-profile" onclick="handleEditProfile()">Editar perfil</button>
+                                <button class="btn-edit-profile" id="btn-edit-profile" onclick="handleEditProfile()">Editar perfil</button>
                             </div>
 
-                            <div class="header-actions">
+                            <div class="header-actions" style="display: flex; gap: 8px; align-items: center;">
+                                <button id="profile-follow-btn" class="btn-edit-profilee" style="display: none;">Seguir</button>
+                                <button id="profile-message-btn" class="btn-edit-profilee" style="display:none;">Mensagem</button>
                                 <button id="open-settings-btn" class="btn-edit-profilee"><img class="imagem-config" src="./images/config.png"
-                                        alt="config"></button>
-                            </div>
-
-                            <div class="header-actions">
-                                <button id="open-settings-btn" class="btn-edit-profileee"><img class="imagem-config" src="./images/publicacao.png"
-                                        alt="config"></button>
+                                    alt="config"></button>
                             </div>
                         </div>
 

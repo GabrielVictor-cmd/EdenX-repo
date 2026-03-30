@@ -175,6 +175,10 @@ async function getFeed(limit = 20, offset = 0) {
   return apiRequest(`/posts/feed?limit=${limit}&offset=${offset}`);
 }
 
+async function getUserPosts(userId, limit = 20, offset = 0) {
+  return apiRequest(`/users/${userId}/posts?limit=${limit}&offset=${offset}`);
+}
+
 async function createPost(caption, imageUrl = null, file = null) {
   if (file) {
     const formData = new FormData();
@@ -274,8 +278,33 @@ async function getConversation(otherUserId, limit = 50, offset = 0) {
   return apiRequest(`/messages/conversation/${otherUserId}?limit=${limit}&offset=${offset}`);
 }
 
-async function sendMessage(recipientId, message) {
-  return apiRequest('/messages', 'POST', { recipientId, message });
+async function uploadMessageMedia(file) {
+  const formData = new FormData();
+  formData.append('media', file);
+
+  const options = {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${SESSION.token}`
+    },
+    body: formData
+  };
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/messages/upload`, options);
+    const data = await response.json();
+    return { success: response.ok, data };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+async function sendMessage(recipientId, message, mediaUrl = null, mediaType = null) {
+  const body = { recipientId };
+  if (message) body.message = message;
+  if (mediaUrl) body.media_url = mediaUrl;
+  if (mediaType) body.media_type = mediaType;
+  return apiRequest('/messages', 'POST', body);
 }
 
 async function getUnreadCount() {
@@ -414,6 +443,14 @@ async function uploadAvatar(file) {
 
 async function getFollowers(userId) {
   return apiRequest(`/users/${userId}/followers`);
+}
+
+async function getFollowing(userId) {
+  return apiRequest(`/users/${userId}/following`);
+}
+
+async function getPublicUserProfile(username) {
+  return apiRequest(`/users/profile/${encodeURIComponent(username)}`);
 }
 
 async function followUser(userId) {

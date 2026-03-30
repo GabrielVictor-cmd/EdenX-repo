@@ -3,13 +3,13 @@ const Message = require('../models/Message');
 exports.sendMessage = async (req, res) => {
   try {
     const senderId = req.user.id;
-    const { recipientId, message } = req.body;
+    const { recipientId, message, media_url, media_type } = req.body;
 
-    if (!recipientId || !message) {
-      return res.status(400).json({ message: 'Destinatário e mensagem são obrigatórios' });
+    if (!recipientId || (!message && !media_url)) {
+      return res.status(400).json({ message: 'Destinatário e mensagem ou mídia são obrigatórios' });
     }
 
-    const messageId = await Message.create(senderId, recipientId, message);
+    const messageId = await Message.create(senderId, recipientId, message, media_url, media_type);
 
     res.status(201).json({
       message: 'Mensagem enviada',
@@ -79,5 +79,21 @@ exports.getUnreadCount = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Erro ao contar mensagens não lidas' });
+  }
+};
+
+exports.uploadMessageMedia = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Nenhum arquivo de mídia enviado' });
+    }
+
+    const mediaUrl = `/uploads/messages/${req.file.filename}`;
+    const mediaType = req.file.mimetype.startsWith('image/') ? 'image' : 'video';
+
+    res.json({ message: 'Mídia enviada com sucesso', mediaUrl, mediaType });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao enviar mídia de mensagem' });
   }
 };

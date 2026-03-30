@@ -1,13 +1,13 @@
 const pool = require('../config/database');
 
 class Message {
-  static async create(senderId, recipientId, messageText) {
+  static async create(senderId, recipientId, messageText, mediaUrl = null, mediaType = null) {
     const query = `
-      INSERT INTO messages (sender_id, recipient_id, message_text, created_at, is_read)
-      VALUES (?, ?, ?, CURRENT_TIMESTAMP, 0)
+      INSERT INTO messages (sender_id, recipient_id, message_text, media_url, media_type, created_at, is_read)
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 0)
     `;
     try {
-      const result = await pool.execute(query, [senderId, recipientId, messageText]);
+      const result = await pool.execute(query, [senderId, recipientId, messageText || null, mediaUrl, mediaType]);
       return result.insertId;
     } catch (error) {
       console.error('Erro ao criar mensagem:', error);
