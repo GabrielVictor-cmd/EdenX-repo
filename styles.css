@@ -84,6 +84,52 @@ body { background-color: var(--bg-dark); color: white; height: 100vh; overflow: 
 /* Interações */
 .fa-heart.active { color: white; animation: likeJump 0.45s ease; }
 
+.post-more-btn {
+    color: #00e8ff;
+    background: rgba(5, 20, 30, 0.8);
+    border: 1px solid #00e8ff;
+    border-radius: 100%;
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.more-actions-wrap {
+    position: relative;
+}
+
+.post-more-menu {
+    position: absolute;
+    top: 38px;
+    right: 0;
+    flex-direction: column;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.95);
+    border: 1px solid #00e8ff;
+    border-radius: 8px;
+    padding: 8px;
+    z-index: 30;
+    display: none;
+}
+
+.post-more-menu button {
+    color: #fff;
+    background: transparent;
+    border: 1px solid #00d0ff;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 0.84rem;
+    text-transform: uppercase;
+}
+
+.post-more-menu button:hover {
+    background: rgba(0, 208, 255, 0.25);
+}
+
 /* make displayed usernames white */
 .username,
 .user-name {
@@ -2574,6 +2620,43 @@ body.light-theme .username {
 
 #main-search:hover {
     border-color: var(--cyan-primary);
+}
+
+#main-search:focus {
+    background-color: rgba(0,0,0,0.05);
+}
+
+/* Responsividade geral para diferentes dispositivos */
+@media (max-width: 1200px) {
+    .app-container { flex-direction: column; height: auto; }
+    .sidebar { width: 100%; flex-direction: row; justify-content: space-around; padding: 10px 5px; border-right: none; border-bottom: 1px solid #222; }
+    .sidebar .nav-item { width: auto; flex: 1; text-align: center; padding: 10px 5px; border-radius: 8px; }
+    .content-area { height: calc(100vh - 60px - 60px); }
+}
+
+@media (max-width: 768px) {
+    body { overflow: auto; }
+    .top-logo { padding: 0 15px; }
+    .app-container { height: auto; }
+    .sidebar { position: sticky; top: 60px; width: 100%; z-index: 20; }
+    .content-area { height: auto; }
+    .feed-post, .post-card, .profile-header-content { width: 100%; max-width: 100%; margin: 10px 0; }
+    .post-avatar { width: 40px; height: 40px; }
+    .post-author-name { font-size: 1rem; }
+    .post-time { font-size: 0.75rem; }
+    .post-actions { flex-wrap: wrap; gap: 6px; }
+    .post-action i { font-size: 1.2rem; }
+    .reel-overlay { font-size: 0.9rem; }
+    .profile-stats { flex-wrap: wrap; }
+}
+
+@media (max-width: 480px) {
+    .sidebar { display: flex; flex-wrap: wrap; gap: 5px; }
+    .nav-item { font-size: 0.8rem; padding: 9px 5px; }
+    .post-caption, .post-info { font-size: 0.9rem; }
+    .chat-window, .chat-list { width: 100%; }
+    .post-more-btn { width: 30px; height: 30px; }
+    .post-more-menu { top: 36px; right: -10px; }
 }
 
 #main-search:focus {

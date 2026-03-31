@@ -383,7 +383,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <span class="post-time">${post.time}</span>
                     </div>
                 </div>
-                <button class="post-more-btn" aria-label="Mais opções"><i class="fa-solid fa-ellipsis"></i></button>
+                <div class="more-actions-wrap">
+                    <button class="post-more-btn" aria-label="Mais opções"><i class="fa-solid fa-ellipsis"></i></button>
+                    <div class="post-more-menu" style="display:none;">
+                        ${isOwnPost ? `<button class="post-edit-btn">Editar</button><button class="post-delete-menu-btn">Excluir</button>` : ''}
+                    </div>
+                </div>
             </div>
             <p class="post-text">${post.text}</p>
             ${post.location ? `<div class="post-location"><i class="fa-solid fa-location-dot"></i> ${post.location}</div>` : ''}
@@ -411,7 +416,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>
                     </div>
                 </div>
-                <button class="icon-btn post-delete-btn" aria-label="Excluir" style="display: ${isOwnPost ? 'inline-flex' : 'none'};">
+                <button class="icon-btn post-delete-btn" aria-label="Excluir" style="display: none;">
                     <i class="fa-solid fa-trash"></i>
                 </button>
                 <button class="icon-btn" aria-label="Salvar">
@@ -431,7 +436,72 @@ document.addEventListener('DOMContentLoaded', async () => {
         const shareBtn = card.querySelector('.post-share-btn');
         const repostBtn = card.querySelector('.post-repost-btn');
         const repostAvatar = card.querySelector('.repost-avatar');
+        const moreBtn = card.querySelector('.post-more-btn');
+        const moreMenu = card.querySelector('.post-more-menu');
+        const editMenuBtn = card.querySelector('.post-edit-btn');
+        const deleteMenuBtn = card.querySelector('.post-delete-menu-btn');
 
+        if (moreBtn && moreMenu) {
+            moreBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                moreMenu.style.display = moreMenu.style.display === 'flex' ? 'none' : 'flex';
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!card.contains(e.target)) {
+                    moreMenu.style.display = 'none';
+                }
+            });
+        }
+
+        if (editMenuBtn) {
+            editMenuBtn.addEventListener('click', async () => {
+                const input = prompt('Editar post:', post.text);
+                if (input === null) return;
+                const newText = input.trim();
+                if (!newText) {
+                    alert('Texto não pode ser vazio.');
+                    return;
+                }
+
+                const res = await updatePost(post.id, newText);
+                if (res.success) {
+                    post.text = newText;
+                    if (post.id && postsData) {
+                        const idx = postsData.findIndex(p => p.id === post.id);
+                        if (idx !== -1) postsData[idx].text = newText;
+                    }
+                    renderFeed();
+                    if (document.getElementById('view-profile').classList.contains('active')) {
+                        loadProfilePosts(SESSION.userId, SESSION.username);
+                    }
+                    alert('Post atualizado com sucesso!');
+                } else {
+                    alert(res.message || 'Não foi possível atualizar o post.');
+                }
+                moreMenu.style.display = 'none';
+            });
+        }
+
+        if (deleteMenuBtn) {
+            deleteMenuBtn.addEventListener('click', async () => {
+                if (!confirm('Tem certeza de que deseja excluir este post?')) return;
+                const result = await deletePost(post.id);
+                if (result.success) {
+                    likedPosts.delete(post.id);
+                    savedPosts.delete(post.id);
+                    persistPosts();
+                    alert('Post excluído com sucesso.');
+                    await loadFeed();
+                    if (document.getElementById('view-profile').classList.contains('active')) {
+                        await loadProfilePosts(SESSION.userId, SESSION.username);
+                    }
+                } else {
+                    alert(result.message || 'Falha ao excluir post.');
+                }
+                moreMenu.style.display = 'none';
+            });
+        }
 
         if (commentBtn) {
             commentBtn.addEventListener('click', () => {
@@ -830,7 +900,7 @@ async function openShareModal(post) {
             <h2>Compartilhar post</h2>
             <span class="close-modal" style="cursor:pointer;" id="close-share-modal">&times;</span>
         </div>
-        <div style="margin:8px 0; color:#fff;">Escolha um ou mais contatos para enviar:</div>
+        <div style="margin:8px 0; color:black;">Escolha um ou mais contatos para enviar:</div>
         <div id="share-following-list" style="max-height:300px; overflow-y:auto; margin-bottom:12px;"></div>
         <button id="share-send-btn" class="btn-share">Enviar</button>
     `;
@@ -845,10 +915,10 @@ async function openShareModal(post) {
 
     const listContainer = document.getElementById('share-following-list');
     const ownerId = post.user_id || SESSION.userId;
-    const followerRes = await getFollowers(ownerId);
+    const followingRes = await getFollowing(ownerId);
 
-    if (!followerRes.success || !Array.isArray(followerRes.data) || followerRes.data.length === 0) {
-        listContainer.innerHTML = '<p style="color:#ccc;">Este usuário não possui seguidores para compartilhar o post (ou usuário não tem seguidores).</p>';
+    if (!followingRes.success || !Array.isArray(followingRes.data) || followingRes.data.length === 0) {
+        listContainer.innerHTML = '<p style="color:#ccc;">Nenhum usuário seguido encontrado para compartilhar este post.</p>';
         return;
     }
 

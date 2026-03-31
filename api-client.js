@@ -465,6 +465,10 @@ async function getPublicUserProfile(username) {
   return apiRequest(`/users/profile/${encodeURIComponent(username)}`);
 }
 
+async function updatePost(postId, caption) {
+  return apiRequest(`/posts/${postId}`, 'PUT', { caption });
+}
+
 async function followUser(userId) {
   return apiRequest(`/users/${userId}/follow`, 'POST');
 }

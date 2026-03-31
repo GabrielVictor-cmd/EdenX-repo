@@ -9,6 +9,7 @@ router.post('/', auth, postController.uploadMulter, postController.createPost);
 router.get('/feed', auth, postController.getFeed);
 router.get('/user/:userId', postController.getUserPosts);
 router.get('/:postId', postController.getPost);
+router.put('/:postId', auth, postController.updatePost);
 
 // Curtidas
 router.post('/:postId/like', auth, postController.likePost);

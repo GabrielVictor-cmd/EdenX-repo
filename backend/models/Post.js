@@ -182,6 +182,22 @@ class Post {
     }
   }
 
+  static async updatePost(postId, userId, caption) {
+    const query = `
+      UPDATE posts
+      SET caption = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND user_id = ?
+    `;
+
+    try {
+      const result = await pool.execute(query, [caption, postId, userId]);
+      return result[0].affectedRows > 0;
+    } catch (error) {
+      console.error('Erro ao atualizar post:', error);
+      return false;
+    }
+  }
+
   static async deletePost(postId, userId) {
     const deleteLikesQuery = `DELETE FROM likes WHERE post_id = ?`;
     const deleteCommentsQuery = `DELETE FROM comments WHERE post_id = ?`;

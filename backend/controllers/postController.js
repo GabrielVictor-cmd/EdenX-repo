@@ -193,6 +193,28 @@ exports.deleteComment = async (req, res) => {
   }
 };
 
+exports.updatePost = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { postId } = req.params;
+    const { caption } = req.body;
+
+    if (!caption || !caption.trim()) {
+      return res.status(400).json({ message: 'O conteúdo do post não pode estar vazio.' });
+    }
+
+    const updated = await Post.updatePost(postId, userId, caption.trim());
+    if (!updated) {
+      return res.status(403).json({ message: 'Você não pode editar este post ou ele não existe.' });
+    }
+
+    res.json({ success: true, message: 'Post atualizado com sucesso.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao atualizar post' });
+  }
+};
+
 exports.deletePost = async (req, res) => {
   try {
     const userId = req.user.id;
