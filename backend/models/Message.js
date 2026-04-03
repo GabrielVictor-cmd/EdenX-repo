@@ -44,7 +44,7 @@ class Message {
           WHEN m.sender_id = ? THEN m.recipient_id 
           ELSE m.sender_id 
         END as other_user_id,
-        u.username, u.avatar_url,
+        u.id as user_id, u.username, u.avatar_url,
         (SELECT message_text FROM messages 
          WHERE (sender_id = ? AND recipient_id = u.id) 
            OR (sender_id = u.id AND recipient_id = ?)
@@ -59,7 +59,7 @@ class Message {
         (m.recipient_id = ? AND m.sender_id = u.id)
       )
       WHERE m.sender_id = ? OR m.recipient_id = ?
-      GROUP BY other_user_id
+      GROUP BY other_user_id, user_id, u.username, u.avatar_url, last_message, last_message_time
       ORDER BY last_message_time DESC
       LIMIT ?
     `;

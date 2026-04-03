@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (item.dataset.target === 'view-profile') {
                 if (typeof loadUserProfile === 'function') loadUserProfile();
             }
+            if (item.dataset.target === 'view-messages') {
+                loadChatList();
+            }
         });
     });
 
