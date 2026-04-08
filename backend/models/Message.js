@@ -45,11 +45,15 @@ class Message {
           ELSE m.sender_id 
         END as other_user_id,
 <<<<<<< HEAD
+<<<<<<< HEAD
         u.username, u.avatar_url,
         m.message_text as last_message,
         m.created_at as last_message_time
 =======
         u.id as user_id, u.username, u.avatar_url,
+=======
+        u.username, u.avatar_url,
+>>>>>>> parent of 3aec31e (DM implementada porém com defeitos ainda)
         (SELECT message_text FROM messages 
          WHERE (sender_id = ? AND recipient_id = u.id) 
            OR (sender_id = u.id AND recipient_id = ?)
@@ -66,9 +70,13 @@ class Message {
       )
       WHERE m.sender_id = ? OR m.recipient_id = ?
 <<<<<<< HEAD
+<<<<<<< HEAD
       ORDER BY m.created_at DESC
 =======
       GROUP BY other_user_id, user_id, u.username, u.avatar_url, last_message, last_message_time
+=======
+      GROUP BY other_user_id
+>>>>>>> parent of 3aec31e (DM implementada porém com defeitos ainda)
       ORDER BY last_message_time DESC
 >>>>>>> 3aec31e56ffe2c4b1c2204f3b2812c660d4947a5
       LIMIT ?

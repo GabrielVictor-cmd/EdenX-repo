@@ -48,7 +48,7 @@ class Post {
       LIMIT ? OFFSET ?
     `;
     try {
-      const result = await pool.query(query, [userId, userId, userId, Number(limit), Number(offset)]);
+      const result = await pool.query(query, [userId, userId, userId, limit, offset]);
       return result.rows || [];
     } catch (error) {
       console.error('Erro ao buscar feed:', error);
@@ -68,7 +68,7 @@ class Post {
       LIMIT ? OFFSET ?
     `;
     try {
-      const result = await pool.query(query, [userId, Number(limit), Number(offset)]);
+      const result = await pool.query(query, [userId, limit, offset]);
       return result.rows || [];
     } catch (error) {
       console.error('Erro ao buscar posts do usuário:', error);

@@ -1,5 +1,4 @@
 const Message = require('../models/Message');
-const UserFollows = require('../models/UserFollows');
 
 exports.sendMessage = async (req, res) => {
   try {
@@ -8,11 +7,6 @@ exports.sendMessage = async (req, res) => {
 
     if (!recipientId || (!message && !media_url)) {
       return res.status(400).json({ message: 'Destinatário e mensagem ou mídia são obrigatórios' });
-    }
-
-    const userFollows = await UserFollows.checkFollow(senderId, recipientId);
-    if (!userFollows) {
-      return res.status(403).json({ message: 'Você só pode enviar mensagens para usuários que você segue.' });
     }
 
     const messageId = await Message.create(senderId, recipientId, message, media_url, media_type);
