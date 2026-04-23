@@ -5,8 +5,8 @@ const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
 
-// Carregar variáveis de ambiente
-dotenv.config();
+// Carregar variáveis de ambiente do arquivo .env
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // Importar banco de dados (testa conexão)
 const db = require('./config/database');

@@ -1,5 +1,5 @@
 // Configuração da API
-const API_BASE_URL = 'http://localhost:3002/api';
+const API_BASE_URL = 'http://localhost:3002';
 const WS_URL = 'http://localhost:3002';
 
 // Objeto global para armazenar dados da sessão
@@ -127,6 +127,11 @@ async function login(email, password) {
   });
 
   if (result.success) {
+    const token = result.token;
+    if (token) {
+      localStorage.setItem('authToken', token);
+    }
+
     const normalizedAvatar = normalizeAvatarUrl(result.data.user.avatar_url);
 
     SESSION.token = result.data.token;
@@ -180,11 +185,11 @@ function logout() {
 // ====================================================
 
 async function getFeed(limit = 20, offset = 0) {
-  return apiRequest(`/posts/feed?limit=${limit}&offset=${offset}`);
+  return apiRequest(`/api/posts/feed?limit=${limit}&offset=${offset}`);
 }
 
 async function getUserPosts(userId, limit = 20, offset = 0) {
-  return apiRequest(`/users/${userId}/posts?limit=${limit}&offset=${offset}`);
+  return apiRequest(`/api/users/${userId}/posts?limit=${limit}&offset=${offset}`);
 }
 
 async function createPost(caption, imageUrl = null, file = null) {
@@ -202,7 +207,7 @@ async function createPost(caption, imageUrl = null, file = null) {
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}/posts`, options);
+      const response = await fetch(`${API_BASE_URL}/api/posts`, options);
       const data = await response.json();
       return { success: response.ok, data };
     } catch (error) {
@@ -210,35 +215,35 @@ async function createPost(caption, imageUrl = null, file = null) {
     }
   }
 
-  return apiRequest('/posts', 'POST', { caption, image_url: imageUrl });
+  return apiRequest('/api/posts', 'POST', { caption, image_url: imageUrl });
 }
 
 async function likePost(postId) {
-  return apiRequest(`/posts/${postId}/like`, 'POST');
+  return apiRequest(`/api/posts/${postId}/like`, 'POST');
 }
 
 async function unlikePost(postId) {
-  return apiRequest(`/posts/${postId}/like`, 'DELETE');
+  return apiRequest(`/api/posts/${postId}/like`, 'DELETE');
 }
 
 async function deletePost(postId) {
-  return apiRequest(`/posts/${postId}`, 'DELETE');
+  return apiRequest(`/api/posts/${postId}`, 'DELETE');
 }
 
 async function getComments(postId, limit = 20) {
-  return apiRequest(`/posts/${postId}/comments?limit=${limit}`);
+  return apiRequest(`/api/posts/${postId}/comments?limit=${limit}`);
 }
 
 async function addComment(postId, comment, parentCommentId = null) {
-  return apiRequest(`/posts/${postId}/comments`, 'POST', { comment, parent_comment_id: parentCommentId });
+  return apiRequest(`/api/posts/${postId}/comments`, 'POST', { comment, parent_comment_id: parentCommentId });
 }
 
 async function editComment(postId, commentId, comment) {
-  return apiRequest(`/posts/${postId}/comments/${commentId}`, 'PUT', { comment });
+  return apiRequest(`/api/posts/${postId}/comments/${commentId}`, 'PUT', { comment });
 }
 
 async function deleteComment(postId, commentId) {
-  return apiRequest(`/posts/${postId}/comments/${commentId}`, 'DELETE');
+  return apiRequest(`/api/posts/${postId}/comments/${commentId}`, 'DELETE');
 }
 
 // ====================================================
@@ -266,7 +271,7 @@ async function createStory(imageUrl = null, file = null, userId = null) {
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}/stories/create`, options);
+      const response = await fetch(`${API_BASE_URL}/api/stories/create`, options);
       const data = await response.json();
       return { success: response.ok, data };
     } catch (error) {
@@ -274,7 +279,7 @@ async function createStory(imageUrl = null, file = null, userId = null) {
     }
   }
 
-  return apiRequest('/stories/create', 'POST', { image_url: imageUrl, userId });
+  return apiRequest('/api/stories/create', 'POST', { image_url: imageUrl, userId });
 }
 
 async function markStoryViewed(storyId) {
@@ -294,11 +299,11 @@ async function getFollowersStories() {
 // ====================================================
 
 async function getConversations() {
-  return apiRequest('/messages/list');
+  return apiRequest('/api/messages/list');
 }
 
 async function getConversation(otherUserId, limit = 50, offset = 0) {
-  return apiRequest(`/messages/conversation/${otherUserId}?limit=${limit}&offset=${offset}`);
+  return apiRequest(`/api/messages/conversation/${otherUserId}?limit=${limit}&offset=${offset}`);
 }
 
 async function uploadMessageMedia(file) {
@@ -314,7 +319,7 @@ async function uploadMessageMedia(file) {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/messages/upload`, options);
+      const response = await fetch(`${API_BASE_URL}/api/messages/upload`, options);
     const data = await response.json();
     return { success: response.ok, data };
   } catch (error) {
@@ -332,7 +337,7 @@ async function sendMessage(recipientId, message, mediaUrl = null, mediaType = nu
   console.log('   Payload:', JSON.stringify(body));
   console.log('   Token:', SESSION.token ? SESSION.token.substring(0, 20) + '...' : 'NONE');
   
-  const result = await apiRequest('/messages', 'POST', body);
+  const result = await apiRequest('/api/messages', 'POST', body);
   
   console.log('📨 sendMessage - Resposta recebida:');
   console.log('   Sucesso:', result.success);
@@ -342,7 +347,7 @@ async function sendMessage(recipientId, message, mediaUrl = null, mediaType = nu
 }
 
 async function getUnreadCount() {
-  return apiRequest('/messages/unread/count');
+  return apiRequest('/api/messages/unread/count');
 }
 
 // ====================================================
@@ -350,7 +355,7 @@ async function getUnreadCount() {
 // ====================================================
 
 async function getReels(limit = 20, offset = 0) {
-  return apiRequest(`/reels?limit=${limit}&offset=${offset}`);
+  return apiRequest(`/api/reels?limit=${limit}&offset=${offset}`);
 }
 
 async function createReel(caption, videoFile = null, thumbnailUrl = null) {
@@ -369,7 +374,7 @@ async function createReel(caption, videoFile = null, thumbnailUrl = null) {
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}/reels`, options);
+      const response = await fetch(`${API_BASE_URL}/api/reels`, options);
       const data = await response.json();
       return { success: response.ok, data };
     } catch (error) {
@@ -377,15 +382,15 @@ async function createReel(caption, videoFile = null, thumbnailUrl = null) {
     }
   }
 
-  return apiRequest('/reels', 'POST', { caption, video_url: videoFile, thumbnail_url: thumbnailUrl });
+  return apiRequest('/api/reels', 'POST', { caption, video_url: videoFile, thumbnail_url: thumbnailUrl });
 }
 
 async function likeReel(reelId) {
-  return apiRequest(`/reels/${reelId}/like`, 'POST');
+  return apiRequest(`/api/reels/${reelId}/like`, 'POST');
 }
 
 async function unlikeReel(reelId) {
-  return apiRequest(`/reels/${reelId}/like`, 'DELETE');
+  return apiRequest(`/api/reels/${reelId}/like`, 'DELETE');
 }
 
 // ====================================================
@@ -393,11 +398,11 @@ async function unlikeReel(reelId) {
 // ====================================================
 
 async function searchUsers(query) {
-  return apiRequest(`/search/users?query=${encodeURIComponent(query)}`);
+  return apiRequest(`/api/search/users?query=${encodeURIComponent(query)}`);
 }
 
 async function searchPosts(query) {
-  return apiRequest(`/search/posts?query=${encodeURIComponent(query)}`);
+  return apiRequest(`/api/search/posts?query=${encodeURIComponent(query)}`);
 }
 
 // ====================================================
@@ -405,7 +410,7 @@ async function searchPosts(query) {
 // ====================================================
 
 async function getProfile() {
-  const result = await apiRequest('/users/profile');
+  const result = await apiRequest('/api/users/profile');
   
   if (result.success) {
     // Atualizar SESSION com dados completos
@@ -441,7 +446,7 @@ async function updateProfile(displayName, username, bio, location, link, anniver
     payload.avatar_url = avatarUrl;
   }
 
-  return apiRequest('/users/profile', 'PUT', payload);
+  return apiRequest('/api/users/profile', 'PUT', payload);
 }
 
 async function uploadAvatar(file) {
@@ -460,7 +465,7 @@ async function uploadAvatar(file) {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/users/upload-avatar`, options);
+    const response = await fetch(`${API_BASE_URL}/api/users/upload-avatar`, options);
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -476,27 +481,27 @@ async function uploadAvatar(file) {
 }
 
 async function getFollowers(userId) {
-  return apiRequest(`/users/${userId}/followers`);
+  return apiRequest(`/api/users/${userId}/followers`);
 }
 
 async function getFollowing(userId) {
-  return apiRequest(`/users/${userId}/following`);
+  return apiRequest(`/api/users/${userId}/following`);
 }
 
 async function getPublicUserProfile(username) {
-  return apiRequest(`/users/profile/${encodeURIComponent(username)}`);
+  return apiRequest(`/api/users/profile/${encodeURIComponent(username)}`);
 }
 
 async function updatePost(postId, caption) {
-  return apiRequest(`/posts/${postId}`, 'PUT', { caption });
+  return apiRequest(`/api/posts/${postId}`, 'PUT', { caption });
 }
 
 async function followUser(userId) {
-  return apiRequest(`/users/${userId}/follow`, 'POST');
+  return apiRequest(`/api/users/${userId}/follow`, 'POST');
 }
 
 async function unfollowUser(userId) {
-  return apiRequest(`/users/${userId}/unfollow`, 'DELETE');
+  return apiRequest(`/api/users/${userId}/unfollow`, 'DELETE');
 }
 
 // ====================================================

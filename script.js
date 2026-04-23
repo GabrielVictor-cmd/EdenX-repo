@@ -149,6 +149,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.body.classList.remove('modal-active');
     }
 
+    function normalizeUploadedUrl(url) {
+        if (!url) return '';
+        if (url.startsWith('http://') || url.startsWith('https://')) return url;
+        
+        // Usar API_BASE_URL removendo /api
+        const serverBase = typeof API_BASE_URL !== 'undefined' 
+            ? API_BASE_URL.replace(/\/api$/, '') 
+            : window.location.origin;
+        
+        if (url.startsWith('/')) {
+            return `${serverBase}${url}`;
+        }
+        return `${serverBase}/${url}`;
+    }
+
     async function postStory() {
         const fileInput = document.getElementById('story-image-input');
         const captionInput = document.getElementById('story-caption-input');
@@ -178,9 +193,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        const imageUrl = result.data?.imageUrl
-            ? `${API_BASE_URL.replace(/\/api$/, '')}${result.data.imageUrl}`
-            : URL.createObjectURL(file);
+        const returnedImageUrl = result.data?.imageUrl || result.data?.image_url;
+        const imageUrl = returnedImageUrl ? normalizeUploadedUrl(returnedImageUrl) : URL.createObjectURL(file);
 
         const newStory = {
             id: `story-${Date.now()}`,
@@ -433,7 +447,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             ${post.location ? `<div class="post-location"><i class="fa-solid fa-location-dot"></i> ${post.location}</div>` : ''}
             ${post.image ? `
             <div class="post-image-wrapper">
-                <img src="${post.image.startsWith('http') ? post.image : (API_BASE_URL.replace(/\/api$/, '') + post.image)}" alt="Post image" class="post-image" />
+                <img src="${post.image.startsWith('http') ? post.image : normalizeUploadedUrl(post.image)}" alt="Post image" class="post-image" />
             </div>` : ''}
             <div class="post-actions">
                 <div class="post-actions-left">

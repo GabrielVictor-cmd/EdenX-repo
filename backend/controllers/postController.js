@@ -32,7 +32,8 @@ exports.createPost = async (req, res) => {
 
     res.status(201).json({
       message: 'Post criado com sucesso',
-      postId
+      postId,
+      image_url: imageUrl
     });
   } catch (error) {
     console.error(error);
